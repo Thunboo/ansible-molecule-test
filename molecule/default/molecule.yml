@@ -1,0 +1,21 @@
+---
+dependency:
+  name: galaxy
+
+driver:
+  name: docker
+    
+platforms:
+  - name: instance-ubuntu2204
+    image: ubuntu:22.04
+    pre_bulld_image: true
+    #privileged: true
+    #command: /sbin/init
+
+provisioner:
+  name: ansible
+  playbooks:
+    converge: converge.yml
+
+verifier:
+  name: ansible

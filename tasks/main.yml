@@ -1,0 +1,19 @@
+---
+# tasks file for create_file
+
+- name: Create simple file
+  ansible.builtin.copy:
+    content: |
+      Regular file from copy module
+    dest: /tmp/test_file.txt
+    owner: root
+    group: root
+    mode: '0644'
+
+#- name: Create templated file
+#  ansible.builtin.template:
+#    src: file_template.j2
+#    dest: /tmp/test_file2.txt
+#    owner: root
+#    group: root
+#    mode: '0644'
