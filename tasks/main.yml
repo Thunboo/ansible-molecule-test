@@ -17,3 +17,57 @@
 #    owner: root
 #    group: root
 #    mode: '0644'
+
+- name: "Installing postgresql-{{ postgresql_version }}"
+  ansible.builtin.dnf:
+    name: 
+      - "postgresql-{{ postgresql_version }}"
+      - "postgresql-contrib-{{ postgresql_version }}"
+    state: present
+
+- name: Copying from archive
+  block:
+    - name: Copy archive from local server
+      ansible.builtin.copy:
+        src: "/home/replicator/postgre_backups/{{ postgre_backup_name }}"
+        dest: "/home/replicator/postgre_backups/{{ postgre_backup_name }}"
+        owner: root
+        group: root
+        mode: '0770'
+
+    - name: Extract archive
+      ansible.builtin.command: 
+        cmd: "tar -cvzf {{ postgre_backup_name }} /var/lib/postgresql/{{ postgresql_version }}/main"
+      register: extraction_output
+
+    - name: Print the extraction command output
+      ansible.builtin.debug:
+        var: extraction_output.stdout
+  when: instance_creation_type == 'archive'
+
+- name: Copying from actual instance
+  block:
+    - name: Using pg_basebackup for making instance
+      ansible.builtin.command: "pg_basebackup -h {{ main_server_ip }} -D /usr/local/pgsql/data"
+  when: instance_creation_type == 'other'
+
+- name: Create new instance
+  block:
+    - name: Init DB
+      ansible.builtin.command: /usr/bin/postgresql-setup initdb
+
+    - name: Create DB User
+      community.postgresql.postgresql_user:
+        name: "{{ db_user }}"
+        password: "{{ db_password }}"
+        # priv: "ALL PRIVELEGES"
+      state: present
+      become_user: postgres
+
+    - name: Create DB
+      community.postgresql.postgresql_db:
+        name: "{{ db_name }}"
+        owner: "{{ db_user }}"
+        state: present
+      become_user: postgres
+  when: instance_creation_type == 'new'
